@@ -67,7 +67,8 @@ export default function AdminDashboardPage() {
     company: '',
     description: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    is_current: false
   })
 
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false)
@@ -99,6 +100,8 @@ export default function AdminDashboardPage() {
     category: '',
     read_time: ''
   })
+
+  const [editingExperience, setEditingExperience] = useState<any>(null)
 
   useEffect(() => {
     // Admin kontrolü
@@ -152,6 +155,31 @@ export default function AdminDashboardPage() {
     }
   }
 
+  const handleSaveAllContactInfo = async () => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('muhammetinfos')
+        .update({
+          email: infos.email,
+          phone: infos.phone,
+          address: infos.address,
+          github_url: infos.github_url,
+          linkedin_url: infos.linkedin_url,
+          twitter_url: infos.twitter_url,
+          instagram_url: infos.instagram_url
+        })
+        .eq('id', infos.id)
+
+      if (error) throw error
+
+      toast.success('Tüm iletişim bilgileri başarıyla güncellendi')
+      fetchData() // Verileri yenile
+    } catch (error) {
+      toast.error('Güncelleme sırasında bir hata oluştu')
+    }
+  }
+
   const handleAddSkill = async () => {
     try {
       const supabase = createClient()
@@ -191,7 +219,10 @@ export default function AdminDashboardPage() {
       const supabase = createClient()
       const { error } = await supabase
         .from('muhammetdeneyim')
-        .insert([newExperience])
+        .insert([{
+          ...newExperience,
+          end_date: newExperience.is_current ? null : newExperience.end_date
+        }])
 
       if (error) throw error
 
@@ -201,11 +232,35 @@ export default function AdminDashboardPage() {
         company: '',
         description: '',
         start_date: '',
-        end_date: ''
+        end_date: '',
+        is_current: false
       })
       fetchData()
     } catch (error) {
       toast.error('Deneyim eklenirken bir hata oluştu')
+    }
+  }
+
+  const handleEditExperience = async () => {
+    if (!editingExperience) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('muhammetdeneyim')
+        .update({
+          ...editingExperience,
+          end_date: editingExperience.is_current ? null : editingExperience.end_date
+        })
+        .eq('id', editingExperience.id)
+
+      if (error) throw error
+
+      toast.success('Deneyim başarıyla güncellendi')
+      setEditingExperience(null)
+      fetchData()
+    } catch (error) {
+      toast.error('Deneyim güncellenirken bir hata oluştu')
     }
   }
 
@@ -597,121 +652,65 @@ export default function AdminDashboardPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">E-posta</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="email"
-                        value={infos.email || ''}
-                        onChange={(e) => setInfos({ ...infos, email: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('email', infos.email)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="email"
+                      value={infos.email || ''}
+                      onChange={(e) => setInfos({ ...infos, email: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefon</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="phone"
-                        value={infos.phone || ''}
-                        onChange={(e) => setInfos({ ...infos, phone: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('phone', infos.phone)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="phone"
+                      value={infos.phone || ''}
+                      onChange={(e) => setInfos({ ...infos, phone: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="address">Adres</Label>
-                    <div className="flex gap-2">
-                      <Textarea
-                        id="address"
-                        value={infos.address || ''}
-                        onChange={(e) => setInfos({ ...infos, address: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('address', infos.address)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Textarea
+                      id="address"
+                      value={infos.address || ''}
+                      onChange={(e) => setInfos({ ...infos, address: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="github_url">GitHub URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="github_url"
-                        value={infos.github_url || ''}
-                        onChange={(e) => setInfos({ ...infos, github_url: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('github_url', infos.github_url)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="github_url"
+                      value={infos.github_url || ''}
+                      onChange={(e) => setInfos({ ...infos, github_url: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="linkedin_url">LinkedIn URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="linkedin_url"
-                        value={infos.linkedin_url || ''}
-                        onChange={(e) => setInfos({ ...infos, linkedin_url: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('linkedin_url', infos.linkedin_url)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="linkedin_url"
+                      value={infos.linkedin_url || ''}
+                      onChange={(e) => setInfos({ ...infos, linkedin_url: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="twitter_url">Twitter URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="twitter_url"
-                        value={infos.twitter_url || ''}
-                        onChange={(e) => setInfos({ ...infos, twitter_url: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('twitter_url', infos.twitter_url)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="twitter_url"
+                      value={infos.twitter_url || ''}
+                      onChange={(e) => setInfos({ ...infos, twitter_url: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="instagram_url">Instagram URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="instagram_url"
-                        value={infos.instagram_url || ''}
-                        onChange={(e) => setInfos({ ...infos, instagram_url: e.target.value })}
-                      />
-                      <Button 
-                        onClick={() => handleInfoUpdate('instagram_url', infos.instagram_url)}
-                        variant="outline"
-                      >
-                        Kaydet
-                      </Button>
-                    </div>
+                    <Input
+                      id="instagram_url"
+                      value={infos.instagram_url || ''}
+                      onChange={(e) => setInfos({ ...infos, instagram_url: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -735,6 +734,12 @@ export default function AdminDashboardPage() {
                     {infos.cv_url && (
                       <a href={infos.cv_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm mt-1 inline-block">CV'yi Görüntüle</a>
                     )}
+                  </div>
+
+                  <div className="pt-4">
+                    <Button onClick={handleSaveAllContactInfo} className="w-full">
+                      Tüm İletişim Bilgilerini Kaydet
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -824,30 +829,48 @@ export default function AdminDashboardPage() {
             <CardContent>
               <div className="space-y-6">
                 <div className="border p-4 rounded-lg space-y-4">
-                  <h3 className="font-semibold">Yeni Deneyim Ekle</h3>
+                  <h3 className="font-semibold">{editingExperience ? 'Deneyimi Düzenle' : 'Yeni Deneyim Ekle'}</h3>
                   <div className="grid gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="exp-title">Pozisyon</Label>
                       <Input
                         id="exp-title"
-                        value={newExperience.title}
-                        onChange={(e) => setNewExperience({ ...newExperience, title: e.target.value })}
+                        value={editingExperience?.title || newExperience.title}
+                        onChange={(e) => {
+                          if (editingExperience) {
+                            setEditingExperience({ ...editingExperience, title: e.target.value })
+                          } else {
+                            setNewExperience({ ...newExperience, title: e.target.value })
+                          }
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="exp-company">Şirket</Label>
                       <Input
                         id="exp-company"
-                        value={newExperience.company}
-                        onChange={(e) => setNewExperience({ ...newExperience, company: e.target.value })}
+                        value={editingExperience?.company || newExperience.company}
+                        onChange={(e) => {
+                          if (editingExperience) {
+                            setEditingExperience({ ...editingExperience, company: e.target.value })
+                          } else {
+                            setNewExperience({ ...newExperience, company: e.target.value })
+                          }
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="exp-description">Açıklama</Label>
                       <Textarea
                         id="exp-description"
-                        value={newExperience.description}
-                        onChange={(e) => setNewExperience({ ...newExperience, description: e.target.value })}
+                        value={editingExperience?.description || newExperience.description}
+                        onChange={(e) => {
+                          if (editingExperience) {
+                            setEditingExperience({ ...editingExperience, description: e.target.value })
+                          } else {
+                            setNewExperience({ ...newExperience, description: e.target.value })
+                          }
+                        }}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -856,8 +879,14 @@ export default function AdminDashboardPage() {
                         <Input
                           id="exp-start"
                           type="date"
-                          value={newExperience.start_date}
-                          onChange={(e) => setNewExperience({ ...newExperience, start_date: e.target.value })}
+                          value={editingExperience?.start_date || newExperience.start_date}
+                          onChange={(e) => {
+                            if (editingExperience) {
+                              setEditingExperience({ ...editingExperience, start_date: e.target.value })
+                            } else {
+                              setNewExperience({ ...newExperience, start_date: e.target.value })
+                            }
+                          }}
                         />
                       </div>
                       <div className="space-y-2">
@@ -865,12 +894,44 @@ export default function AdminDashboardPage() {
                         <Input
                           id="exp-end"
                           type="date"
-                          value={newExperience.end_date}
-                          onChange={(e) => setNewExperience({ ...newExperience, end_date: e.target.value })}
+                          value={editingExperience?.end_date || newExperience.end_date}
+                          onChange={(e) => {
+                            if (editingExperience) {
+                              setEditingExperience({ ...editingExperience, end_date: e.target.value })
+                            } else {
+                              setNewExperience({ ...newExperience, end_date: e.target.value })
+                            }
+                          }}
+                          disabled={editingExperience?.is_current || newExperience.is_current}
                         />
                       </div>
                     </div>
-                    <Button onClick={handleAddExperience}>Deneyim Ekle</Button>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="is-current"
+                        checked={editingExperience?.is_current || newExperience.is_current}
+                        onChange={(e) => {
+                          if (editingExperience) {
+                            setEditingExperience({ ...editingExperience, is_current: e.target.checked })
+                          } else {
+                            setNewExperience({ ...newExperience, is_current: e.target.checked })
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="is-current">Devam Ediyor</Label>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      {editingExperience && (
+                        <Button variant="outline" onClick={() => setEditingExperience(null)}>
+                          İptal
+                        </Button>
+                      )}
+                      <Button onClick={editingExperience ? handleEditExperience : handleAddExperience}>
+                        {editingExperience ? 'Güncelle' : 'Ekle'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -882,7 +943,17 @@ export default function AdminDashboardPage() {
                         {exp.company} • {new Date(exp.start_date).toLocaleDateString('tr-TR')} - {exp.end_date ? new Date(exp.end_date).toLocaleDateString('tr-TR') : 'Günümüz'}
                       </p>
                       <p className="mt-2 text-sm">{exp.description}</p>
-                      <div className="mt-2">
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingExperience({
+                            ...exp,
+                            is_current: !exp.end_date
+                          })}
+                        >
+                          Düzenle
+                        </Button>
                         <Button
                           variant="destructive"
                           size="sm"
